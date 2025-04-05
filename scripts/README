@@ -1,0 +1,55 @@
+Thank you for participating in our AI Hackathon!
+
+This machine comes equipped with some useful resources to get you started. Each team should have been provided a Google Cloud project for use. You will need to configure this machine with 
+your project details and account credentials to get you started. The exouser home directory includes a setup script to get you started:
+
+setup_gcloud.sh
+
+This will prompt you for your Google Cloud project ID, which you can find at https://console.cloud.google.com/home/dashboard once you select the project you have been provided.
+Next you will authenticate gcloud on this machine by following the provided instructions, and authenticate one more time to configure the machine's Application Default Credentials (ADC).
+The setup script will also create a service account with Editor permissions for your cloud project. A credentials file that you can use with Google Cloud libraries to authenticate to
+resources as this service account will be exported to service_account.json in your home directory. This will also be used to configure FastAPI, which will use these credentials to interact
+with Google Cloud resources.
+
+
+Three repositories are pre-installed in your home directory:
+
+1. https://github.com/GoogleCloudPlatform/generative-ai
+
+This repository contains notebooks, code samples, sample apps, and other resources that demonstrate how to use, develop and manage generative AI workflows using Generative AI on Google Cloud
+with Vertex AI.
+
+One of the resources provided in this repository is a Streamlit setup using Google Cloud resources. This will provide you with an interface to interact with and tweak a numberof LLM models 
+provided through Google Cloud's Vertex API. This application is available at /home/exouser/generative-ai/gemini/sample-apps/gemini-streamlit-cloudrun. A script is provided in your home 
+directory to run this application:
+
+run_streamlit.sh
+
+Additional LLMs can be added to streamlit by enabling them in the Vertex AI Model Garden at https://console.cloud.google.com/vertex-ai/model-garden. Once enabled the model can be added to the
+MODELS dictionary in the streamlit application script /home/exouser/generative-ai/gemini/sample-apps/gemini-streamlit-cloudrun/app.py
+
+2. https://github.com/lablab-ai/Google-VertexAI-FastAPI
+
+This is a simple starter boilerplate that gives you a basic FastAPI setup that can be used as a starting point for an API that interacts with Vertex AI. Endpoints can be added to 
+/home/exouser/Google-VertexAI-FastAPI/app/main.py to create the functionality required for your project. A script is provided in your home directory to run fast API:
+
+run_fastapi.sh
+
+This will make the API accesible at port 8081 on this machine's public IP. FastAPI will also provide documentation on the available endpoints. Information on how to access this will be provided
+when running this script.
+
+3. https://github.com/UH-CI/AI-Agent-Askus
+
+This is an example AI chatbot using OpenAI and ChromaDB developed by a researcher at the University of Hawaiʻi. This codebase may provide some helpful information on how to implement a RAG agent
+backed by a database and interact with OpenAI resources. An overview of how this project works can be found here:
+
+https://www.youtube.com/watch?v=gSa5MT2aOZ0
+
+
+Additionally, teams are encouraged to use The Hawaiʻi Climate Data Portal (HCDP), https://www.hawaii.edu/climate-data-portal/, for viewing and retreiving climate data. The HCDP is backed by an API
+that teams can access via a temporary API token that can be used for the duration of this hackathon:
+
+c8aebebea3d9684526cfdab0fc62cbd6
+
+Documentation on the API can be found at https://docs.google.com/document/d/1XlVR6S6aCb7WC4ntC4QaRzdw0i6B-wDahDjsN1z7ECk/edit?usp=sharing. A notebook containing examples on API usage can be found
+at https://github.com/HCDP/hcdp_api_notebook
