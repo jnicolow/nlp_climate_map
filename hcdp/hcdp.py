@@ -136,7 +136,7 @@ class FileDownloadAPI:
 
 
 
-def plot_raster_band(dataset, invalid_threshold=-1e+20, missing_val=-10):
+def plot_raster_band(dataset, invalid_threshold=-1e+20, missing_val=-1):
     band1 = dataset.read(1)  # read the first and only band
 
     # fill the water as value -1
@@ -150,7 +150,7 @@ def plot_raster_band(dataset, invalid_threshold=-1e+20, missing_val=-10):
     max_val = np.max(band1[valid_mask])
     band1_scaled = np.full_like(band1, missing_val)
     band1_scaled[valid_mask] = (band1[valid_mask] - min_val) / (max_val - min_val)
-    band1_scaled = band1
+    # band1_scaled = band1
 
     plt.figure(figsize=(10, 8))
     plt.imshow(band1_scaled, cmap='viridis')
