@@ -8,6 +8,7 @@ https://github.com/jnicolow/nlp_climate_map/commits/)
 
 This repository contains the code for a web app that allows users to interact with [Hawaii Climate Data Portal](https://www.hawaii.edu/climate-data-portal/) data using a map and natural language prompts.
 
+![Alt text](media/year_of_data.png)
 
 
 
