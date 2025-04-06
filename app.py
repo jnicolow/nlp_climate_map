@@ -18,16 +18,11 @@ from rasterio.warp import transform_bounds
 from gutils import gutils
 from hcdp import hcdp
 
+CENTER_START = [20.65, -157.3319]
+ZOOM_START = 7.5
+
 st.set_page_config(layout="wide")
 
-
-cloud_run_service = os.environ.get("K_SERVICE")
-if cloud_run_service:
-    st.link_button(
-        "Open in Cloud Run",
-        f"""https://console.cloud.google.com/run/detail/us-central1/{
-            cloud_run_service}/source""",
-    )
 
 # --- Page Setup ---
 st.header("Interactive Map Demo", divider="rainbow")
@@ -37,6 +32,15 @@ client = gutils.gcloud_auth()  # sets up gcloud client to get llm response
 # # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "layer" not in st.session_state:
+    st.session_state["layer"] = None
+
+if "center" not in st.session_state:
+    st.session_state["center"] = [20.65, -157.3319]
+
+if "zoom" not in st.session_state:
+    st.session_state["zoom"] = 7.5
 
 col1, col2 = st.columns([5, 2])
 
@@ -57,28 +61,14 @@ raster_data_normalized = None
 
 
 # --- Map Setup ---
-with col1:
-    hawaii_center = [21.483, -157.980]  # Latitude, Longitude
 
-# Get saved state or fall back
-    center = st.session_state.get("map_center", hawaii_center)
-    zoom = st.session_state.get("map_zoom", 7)
-
-    m = folium.Map(location=hawaii_center, zoom_start=zoom)
-
-
-# Display the map and capture interaction
-    result = st_folium(m, width=1280, height=720,
-                       returned_objects=["last_center", "zoom"])
-
-# Save the new state to prevent reset
-    if result:
-        st.session_state["map_center"] = result.get(
-            "last_center", hawaii_center)
-        st.session_state["map_zoom"] = result.get("zoom", zoom)
+# Create the map
+m = folium.Map(location=CENTER_START, zoom_start=ZOOM_START)
+fg = folium.FeatureGroup(name="ImageLayers")
 
 
 # --- Chat Bot Setup ---
+
 with col2:
 
     # Display chat messages from history on app rerun
@@ -94,51 +84,34 @@ with col2:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-    assert (prompt is not None)
-    response_txt = gutils.answer_prompty(prompt)
-    json_data = gutils.clean_prompty(response_txt)
-    if isinstance(json_data['month'], list):
-        json_data['month'] = json_data['month'][0]
-    file_api = hcdp.FileDownloadAPI(
-        product_type=json_data['product_type'], year=json_data['year'], month=json_data['month'], aggregation=json_data['aggregation'])
-    dataset = file_api.get_data()
+        response_txt = gutils.answer_prompty(prompt)
+        json_data = gutils.clean_prompty(response_txt)
+        if isinstance(json_data['month'], list):
+            json_data['month'] = json_data['month'][0]
+        file_api = hcdp.FileDownloadAPI(
+            product_type=json_data['product_type'], year=json_data['year'], month=json_data['month'], aggregation=json_data['aggregation'])
+        dataset = file_api.get_data()
 
-    # prep rasterio for plot
-    raster_data_normalized = dataset.read(1) / dataset.read(1).max()
+        # prep rasterio for plot
+        raster_data_normalized = dataset.read(1) / dataset.read(1).max()
 
-    # Transform bounds to WGS84 (EPSG:4326)
-    bounds = transform_bounds(dataset.crs, 'EPSG:4326', *dataset.bounds)
+        # Transform bounds to WGS84 (EPSG:4326)
+        bounds = transform_bounds(dataset.crs, 'EPSG:4326', *dataset.bounds)
 
-    # Overlay the raster data
-    if raster_data_normalized is not None:
-        folium.raster_layers.ImageOverlay(
+        # Overlay the raster data
+        layer = folium.raster_layers.ImageOverlay(
             image=raster_data_normalized,
             bounds=[[bounds[1], bounds[0]], [bounds[3], bounds[2]]],
             opacity=0.7
 
-        ).add_to(m)
-# Display the map and capture interaction
-# --- Map Setup ---
+        )
+        st.session_state["layer"] = layer
+
 with col1:
-    hawaii_center = [21.483, -157.980]  # Latitude, Longitude
 
-# Get saved state or fall back
-    center = st.session_state.get("map_center", hawaii_center)
-    zoom = st.session_state.get("map_zoom", 7)
+    if st.session_state["layer"] is not None:
+        fg.add_child(st.session_state["layer"])
 
+    # Show the map and capture the interaction state
+    result = st_folium(m, center=st.session_state["center"], zoom=st.session_state["zoom"], key="new", feature_group_to_add=fg, width=1280, height=720)
 
-# Display the map and capture interaction
-    result = st_folium(m, width=1280, height=720, returned_objects=["last_center", "zoom"])
-
-    folium.raster_layers.ImageOverlay(
-        image=raster_data_normalized,
-        bounds=[[bounds[1], bounds[0]], [bounds[3], bounds[2]]],
-        opacity=0.7
-
-    ).add_to(m)
-
-# Save the new state to prevent reset
-    if result:
-        st.session_state["map_center"] = result.get(
-            "last_center", hawaii_center)
-        st.session_state["map_zoom"] = result.get("zoom", zoom)

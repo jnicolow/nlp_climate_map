@@ -9,15 +9,16 @@ from google.genai import types
 import re
 import json
 
+
 def _project_id() -> str:
-        """Use the Google Auth helper (via the metadata service) to get the Google Cloud Project"""
-        try:
-            _, project = google.auth.default()
-        except google.auth.exceptions.DefaultCredentialsError as e:
-            raise Exception("Could not automatically determine credentials") from e
-        if not project:
-            raise Exception("Could not determine project from credentials.")
-        return project
+    """Use the Google Auth helper (via the metadata service) to get the Google Cloud Project"""
+    try:
+        _, project = google.auth.default()
+    except google.auth.exceptions.DefaultCredentialsError as e:
+        raise Exception("Could not automatically determine credentials") from e
+    if not project:
+        raise Exception("Could not determine project from credentials.")
+    return project
 
 
 def _region() -> str:
@@ -33,10 +34,11 @@ def _region() -> str:
 
 
 def gcloud_auth():
-        
+
     # API_KEY = os.environ.get("GOOGLE_API_KEY")
-    PROJECT_ID = 'alohadata-team5'#os.environ.get("GOOGLE_CLOUD_PROJECT")
-    LOCATION = 'us-central1'#os.environ.get("GOOGLE_CLOUD_REGION", _region())
+    PROJECT_ID = 'alohadata-team5'  # os.environ.get("GOOGLE_CLOUD_PROJECT")
+    # os.environ.get("GOOGLE_CLOUD_REGION", _region())
+    LOCATION = 'us-central1'
     # MODELS = {
     #     "gemini-2.0-flash": "Gemini 2.0 Flash",
     #     "gemini-2.0-flash-lite": "Gemini 2.0 Flash-Lite",
@@ -57,9 +59,10 @@ def gcloud_auth():
 
 
 def answer_prompty(prompt, client=None):
-   if client is None: client = gcloud_auth()
-   
-   si_text = """
+    if client is None:
+        client = gcloud_auth()
+
+    si_text = """
    ## Task Definition
    The user requests climate data (temperature or rainfall) for the Hawaiian Islands. The model returns two responses.
 
@@ -99,40 +102,48 @@ def answer_prompty(prompt, client=None):
 
    """
 
-   config = GenerateContentConfig(
-      temperature = 0,
-      top_p = 0.1,
-      max_output_tokens = 200,
-      response_modalities = ["TEXT"],
-      system_instruction=[types.Part.from_text(text=si_text)],
-   )
+    config = GenerateContentConfig(
+        temperature=0,
+        top_p=0.1,
+        max_output_tokens=200,
+        response_modalities=["TEXT"],
+        system_instruction=[types.Part.from_text(text=si_text)],
+    )
 
-   response = client.models.generate_content(
-      model="gemini-2.0-flash-lite",
-      contents=prompt,
-      config=config,
-   )
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-lite",
+        contents=prompt,
+        config=config,
+    )
 
-   return response.text
+    return response.text
+
 
 def clean_prompty(text):
 
-    match = re.search(r"\{.*?\}", text, re.DOTALL)  # this gets the portion within curly brackets
+    # this gets the portion within curly brackets
+    match = re.search(r"\{.*?\}", text, re.DOTALL)
     if match:
-        dict_string = match.group(0) 
+        dict_string = match.group(0)
         # print(dict_string)
         # dict_string = dict_string.replace('"', '').strip()  # Remove double quotes and strip whitespace
 
-        dict_string = dict_string.replace("'", '"')  # replace single quotes with double quotes
+        # replace single quotes with double quotes
+        dict_string = dict_string.replace("'", '"')
         dict_string = dict_string.replace('None', '"None"')
         # dict_string = re.sub(r'(\b\w+\b)', r'"\1"', dict_string)  # wrap words with double quotes
         # print(dict_string)
         json_data = json.loads(dict_string)
-        if json_data['month'] == "None": json_data['month'] = None
-        if json_data['month'] == 'null': json_data['month'] = None
-        if isinstance(json_data['year'],list): json_data['year'] = json_data['year'][0]
+        if not 'month' in json_data.keys():
+            json_data['month'] = None
+        if json_data['month'] == "None":
+            json_data['month'] = None
+        if json_data['month'] == 'null':
+            json_data['month'] = None
+        if isinstance(json_data['year'], list):
+            json_data['year'] = json_data['year'][0]
         return json_data
         # print(json_data)
-    
+
     print("No dictionary found in the input string.")
-    return {'product_type':'rainfall', 'year':'2020'}
+    return {'product_type': 'rainfall', 'year': '2020'}
