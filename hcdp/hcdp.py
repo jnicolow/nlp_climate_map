@@ -9,6 +9,7 @@ import os
 import requests
 from io import BytesIO
 import rasterio
+from rasterio.io import MemoryFile
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import date
@@ -141,14 +142,14 @@ def plot_raster_band(dataset, invalid_threshold=-1e+20, missing_val=-10):
     # fill the water as value -1
     band1[band1 < invalid_threshold] = missing_val
 
-    # # get the non water area
-    # valid_mask = band1 > missing_val
+    # get the non water area
+    valid_mask = band1 > missing_val
 
-    # # scale only the islands (leave out the water surface which is a hugely negatice number -3.4e+38)
-    # min_val = np.min(band1[valid_mask])
-    # max_val = np.max(band1[valid_mask])
-    # band1_scaled = np.full_like(band1, missing_val)
-    # band1_scaled[valid_mask] = (band1[valid_mask] - min_val) / (max_val - min_val)
+    # scale only the islands (leave out the water surface which is a hugely negatice number -3.4e+38)
+    min_val = np.min(band1[valid_mask])
+    max_val = np.max(band1[valid_mask])
+    band1_scaled = np.full_like(band1, missing_val)
+    band1_scaled[valid_mask] = (band1[valid_mask] - min_val) / (max_val - min_val)
     band1_scaled = band1
 
     plt.figure(figsize=(10, 8))
@@ -159,3 +160,39 @@ def plot_raster_band(dataset, invalid_threshold=-1e+20, missing_val=-10):
     plt.ylabel("Pixel Y")
     plt.tight_layout()
     plt.show()
+
+
+
+def create_in_memory_raster(mean_image, src):
+    memfile = MemoryFile()  # This creates the memory file that will hold the GeoTIFF
+    
+    dataset_in_memory = memfile.open(driver='GTiff', 
+                                    height=mean_image.shape[0], 
+                                    width=mean_image.shape[1], 
+                                    count=1, 
+                                    dtype=mean_image.dtype, 
+                                    crs=src.crs, 
+                                    transform=src.transform)
+    
+    dataset_in_memory.write(mean_image, 1)
+    
+    return dataset_in_memory
+
+def get_year_avg(product_type:str, year:int, aggregation:str='mean'):
+    """
+    :param product_type: rainfall or temperature
+    :param year: int or str 4-digit year
+    :param aggregation: min mean or max
+    """
+    images = []
+
+    # Loop through each month and download the raster data
+    for month in range(1, 13):
+        test = FileDownloadAPI(product_type, year=year, month=month, aggregation=aggregation)
+        dataset = test.get_data()
+        image_data = dataset.read(1)  # Read the first band (assuming one band per image)
+        images.append(image_data)
+
+    stacked_images = np.stack(images, axis=0)
+    mean_image = np.mean(stacked_images, axis=0)
+    return create_in_memory_raster(mean_image, dataset)
