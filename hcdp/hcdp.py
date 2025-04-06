@@ -11,6 +11,8 @@ from io import BytesIO
 import rasterio
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import date
+import calendar
 
 class FileDownloadAPI:
     """
@@ -36,7 +38,7 @@ class FileDownloadAPI:
         if not product_type in ['rainfall', 'temperature']: raise ValueError("product_type should be rainfall or temperature")
         self.product_type = product_type # this is rainfall or temperature
 
-        if year >= 1990: production = 'new'
+        if int(year) >= 1990: production = 'new'
         else: production = 'legacy'
         # if not production in ['new', 'legacy']: raise ValueError("production should be new (1990-present) or legacy (1920-2012)")
         self.production = production
@@ -68,15 +70,26 @@ class FileDownloadAPI:
         if product_type == 'legacy' and (not int(year) >= 1920 or not int(year) <= 2012) and not int: raise ValueError("if production is 'legacy' year must be 1920 to 2012")
         self.year = year
 
-        if not month is None and int(month) > 12: raise ValueError('month must be 0 to 12')
+        if int(month) > 12: raise ValueError('month must be 0 to 12')
         self.month = month
-        if self.month is None: self.month = '' # its optional so can not include it in the url
-        else: self.month = f"{int(self.month):02d}"
+        # if self.month is None: self.month = '' # its optional so can not include it in the url
+        self.month = f"{int(self.month):02d}"
 
         if not day is None and int(day) > 31: raise ValueError('day must be <= 31')
         self.day = day
         if self.day is None: self.day = '' # its optional so can not include it in the url
         else: self.day = f"{int(self.day):02d}"
+
+        # check if date is valid
+        today = date.today()
+        y = int(self.year)
+        m = int(self.month) if self.month else 12  # default to Dec if missing so that we make sure whole year is there (doesnt really matter cuz month cannot be none)
+        d = int(self.day) if self.day else calendar.monthrange(y, m)[0]     # default to 31 if missing
+        input_date = date(y, m, d)
+
+        if input_date > today:
+            raise ValueError('This date has not occured yet cannot querry data')
+      
 
         self.base_url = "https://ikeauth.its.hawaii.edu/files/v2/download/public/system/ikewai-annotated-data/HCDP/production/"    
         # NOTE the format that actually work is slightly different than that fiven on the API documentation page    
@@ -112,35 +125,37 @@ class FileDownloadAPI:
         else:
             raise Exception(f"Failed to download file. HTTP Status code: {response.status_code}")
         
-    def plot_raster(self, invalid_threshold=-1e+20, missing_val=-10):
+    def plot_raster(self):
         if self.dataset is None:
             print('Call get_data to define dataset first')
         else:
-            band1 = self.dataset.read(1)  # read the first and only band
-
-            # fill the water as value -1
-            band1[band1 < invalid_threshold] = missing_val
-
-            # # get the non water area
-            # valid_mask = band1 > missing_val
-
-            # # scale only the islands (leave out the water surface which is a hugely negatice number -3.4e+38)
-            # min_val = np.min(band1[valid_mask])
-            # max_val = np.max(band1[valid_mask])
-            # band1_scaled = np.full_like(band1, missing_val)
-            # band1_scaled[valid_mask] = (band1[valid_mask] - min_val) / (max_val - min_val)
-            band1_scaled = band1
-
-            plt.figure(figsize=(10, 8))
-            plt.imshow(band1_scaled, cmap='viridis')
-            plt.colorbar(label='Normalized Value')
-            plt.title("Scaled Raster (Masked Fill Values)")
-            plt.xlabel("Pixel X")
-            plt.ylabel("Pixel Y")
-            plt.tight_layout()
-            plt.show()
+            plot_raster_band(self.dataset)
 
             
 
 
 
+def plot_raster_band(dataset, invalid_threshold=-1e+20, missing_val=-10):
+    band1 = dataset.read(1)  # read the first and only band
+
+    # fill the water as value -1
+    band1[band1 < invalid_threshold] = missing_val
+
+    # # get the non water area
+    # valid_mask = band1 > missing_val
+
+    # # scale only the islands (leave out the water surface which is a hugely negatice number -3.4e+38)
+    # min_val = np.min(band1[valid_mask])
+    # max_val = np.max(band1[valid_mask])
+    # band1_scaled = np.full_like(band1, missing_val)
+    # band1_scaled[valid_mask] = (band1[valid_mask] - min_val) / (max_val - min_val)
+    band1_scaled = band1
+
+    plt.figure(figsize=(10, 8))
+    plt.imshow(band1_scaled, cmap='viridis')
+    plt.colorbar(label='Normalized Value')
+    plt.title("Scaled Raster (Masked Fill Values)")
+    plt.xlabel("Pixel X")
+    plt.ylabel("Pixel Y")
+    plt.tight_layout()
+    plt.show()
