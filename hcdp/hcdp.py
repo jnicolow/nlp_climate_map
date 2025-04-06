@@ -93,8 +93,13 @@ class FileDownloadAPI:
 
         self.base_url = "https://ikeauth.its.hawaii.edu/files/v2/download/public/system/ikewai-annotated-data/HCDP/production/"    
         # NOTE the format that actually work is slightly different than that fiven on the API documentation page    
-        url_extension = f'{self.product_type}/{self.production}/{self.period}/{self.extent}/{self.fill}/{self.filetype}/{self.year}/{self.product_type}_{self.production}_{self.period}_{self.extent}_{self.fill}_{self.filetype}_{self.year}_{self.month}_{self.day}.{self.extention}'
+        if self.product_type == 'rainfall':
+            url_extension = f'{self.product_type}/{self.production}/{self.period}/{self.extent}/{self.fill}/{self.filetype}/{self.year}/{self.product_type}_{self.production}_{self.period}_{self.extent}_{self.fill}_{self.filetype}_{self.year}_{self.month}_{self.day}.{self.extention}'
+        else:
+            print(self.aggregation)
+            url_extension = f'{self.product_type}/{self.aggregation}/{self.period}/{self.extent}/{self.fill}/{self.filetype}/{self.year}/{self.product_type}_{self.aggregation}_{self.period}_{self.extent}_{self.fill}_{self.filetype}_{self.year}_{self.month}_{self.day}.{self.extention}'
         url_extension = url_extension.replace('//', '/').replace('__', '_').replace('_.', '.')
+        print(url_extension)
 
         self.url = f'{self.base_url}{url_extension}'
 
@@ -118,7 +123,7 @@ class FileDownloadAPI:
         if self.month is None:
             # NOTE then we need to get a year average
             return get_year_avg(product_type=self.product_type, year=self.year, aggregation=self.aggregation)
-        
+
         response = requests.get(self.url, verify=False)
 
         if response.status_code == 200:
