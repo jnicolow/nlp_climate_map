@@ -71,10 +71,10 @@ class FileDownloadAPI:
         if product_type == 'legacy' and (not int(year) >= 1920 or not int(year) <= 2012) and not int: raise ValueError("if production is 'legacy' year must be 1920 to 2012")
         self.year = year
 
-        if int(month) > 12: raise ValueError('month must be 0 to 12')
+        if not month is None and int(month) > 12: raise ValueError('month must be 0 to 12')
         self.month = month
-        # if self.month is None: self.month = '' # its optional so can not include it in the url
-        self.month = f"{int(self.month):02d}"
+        if self.month is None: self.month = '' # its optional so can not include it in the url
+        else: self.month = f"{int(self.month):02d}"
 
         if not day is None and int(day) > 31: raise ValueError('day must be <= 31')
         self.day = day
@@ -94,8 +94,13 @@ class FileDownloadAPI:
 
         self.base_url = "https://ikeauth.its.hawaii.edu/files/v2/download/public/system/ikewai-annotated-data/HCDP/production/"    
         # NOTE the format that actually work is slightly different than that fiven on the API documentation page    
-        url_extension = f'{self.product_type}/{self.production}/{self.period}/{self.extent}/{self.fill}/{self.filetype}/{self.year}/{self.product_type}_{self.production}_{self.period}_{self.extent}_{self.fill}_{self.filetype}_{self.year}_{self.month}_{self.day}.{self.extention}'
+        if self.product_type == 'rainfall':
+            url_extension = f'{self.product_type}/{self.production}/{self.period}/{self.extent}/{self.fill}/{self.filetype}/{self.year}/{self.product_type}_{self.production}_{self.period}_{self.extent}_{self.fill}_{self.filetype}_{self.year}_{self.month}_{self.day}.{self.extention}'
+        else:
+            print(self.aggregation)
+            url_extension = f'{self.product_type}/{self.aggregation}/{self.period}/{self.extent}/{self.fill}/{self.filetype}/{self.year}/{self.product_type}_{self.aggregation}_{self.period}_{self.extent}_{self.fill}_{self.filetype}_{self.year}_{self.month}_{self.day}.{self.extention}'
         url_extension = url_extension.replace('//', '/').replace('__', '_').replace('_.', '.')
+        print(url_extension)
 
         self.url = f'{self.base_url}{url_extension}'
 
@@ -116,6 +121,9 @@ class FileDownloadAPI:
 
 
     def get_data(self):
+        if self.month is None or self.month == '': 
+            self.dataset = get_year_avg(product_type=self.product_type, year=self.year, aggregation=self.aggregation)
+            return self.dataset
         response = requests.get(self.url, verify=False)
 
         if response.status_code == 200:
