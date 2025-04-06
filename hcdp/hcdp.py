@@ -84,11 +84,11 @@ class FileDownloadAPI:
         today = date.today()
         y = int(self.year)
         m = int(self.month) if self.month else 12  # default to Dec if missing so that we make sure whole year is there (doesnt really matter cuz month cannot be none)
-        d = int(self.day) if self.day else calendar.monthrange(y, m)[0]     # default to 31 if missing
+        d = int(self.day) if self.day else calendar.monthrange(y, m)[1]     # default to 31 if missing
         input_date = date(y, m, d)
 
         if input_date > today:
-            raise ValueError('This date has not occured yet cannot querry data')
+            raise ValueError(f'This date ({input_date}) has not occured yet ({today}) cannot querry data')
       
 
         self.base_url = "https://ikeauth.its.hawaii.edu/files/v2/download/public/system/ikewai-annotated-data/HCDP/production/"    
