@@ -4,6 +4,7 @@ service_account.json
 service_account_silly.json
 *.tif
 *.tiff
+!mean_image.tif
 
 
 # Byte-compiled / optimized / DLL files
