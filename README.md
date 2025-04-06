@@ -10,6 +10,7 @@ This repository contains the code for a web app that allows users to interact wi
 
 ![Alt text](media/year_of_data.png)
 
+This project was developed on Saturday March 5th, 2025 as part of the [**Aloha Data: AI Hackathon for Hawaiʻi’s Resilience**](https://datascience.hawaii.edu/ai-hackathon/)
 
 
 
