@@ -24,7 +24,7 @@ class FileDownloadAPI:
     def __init__(self,  
             product_type: str,  # Product type can either be 'rainfall' or 'temperature'
             year: str,           # Year as a 4-digit integer or string (e.g. 2022)
-            month: str = 1,   # Month as a 2-digit string or integer (optional)
+            month: str = None,   # Month as a 2-digit string or integer (optional)
             day: str = None,     # Day as a 2-digit string or integer (optional)
             aggregation: str = "mean"  # Aggregation type ('min', 'max', or 'mean')
             
@@ -73,8 +73,7 @@ class FileDownloadAPI:
 
         if not month is None and int(month) > 12: raise ValueError('month must be 0 to 12')
         self.month = month
-        if self.month is None: self.month = '' # its optional so can not include it in the url
-        else: self.month = f"{int(self.month):02d}"
+        if not self.month is None: self.month = f"{int(self.month):02d}"
 
         if not day is None and int(day) > 31: raise ValueError('day must be <= 31')
         self.day = day
@@ -121,9 +120,10 @@ class FileDownloadAPI:
 
 
     def get_data(self):
-        if self.month is None or self.month == '': 
-            self.dataset = get_year_avg(product_type=self.product_type, year=self.year, aggregation=self.aggregation)
-            return self.dataset
+        if self.month is None:
+            # NOTE then we need to get a year average
+            return get_year_avg(product_type=self.product_type, year=self.year, aggregation=self.aggregation)
+
         response = requests.get(self.url, verify=False)
 
         if response.status_code == 200:
