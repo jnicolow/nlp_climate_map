@@ -33,8 +33,8 @@ client = gutils.gcloud_auth()  # sets up gcloud client to get llm response
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "layer" not in st.session_state:
-    st.session_state["layer"] = None
+if "feature_group" not in st.session_state:
+    st.session_state["feature_group"] = folium.FeatureGroup(name="Layer")
 
 if "center" not in st.session_state:
     st.session_state["center"] = [20.65, -157.3319]
@@ -44,28 +44,12 @@ if "zoom" not in st.session_state:
 
 col1, col2 = st.columns([5, 2])
 
-# --- Data Setup ---
-rainfall = "data/rainfall_new_month_statewide_data_map_2012_03.tif"
-temperature = "test.tif"
-raster_data_normalized = None
-
-# Open the raster dataset
-# with rasterio.open("test.tif") as dataset:
-#    # Read the raster data into a NumPy array
-#    raster_data = dataset.read(1)  # Assuming single-band data
-#    # Normalize values for visualization
-#    raster_data_normalized = raster_data / raster_data.max()
-#
-#    # Transform bounds to WGS84 (EPSG:4326)
-#    bounds = transform_bounds(dataset.crs, 'EPSG:4326', *dataset.bounds)
-
 
 # --- Map Setup ---
 
 # Create the map
-m = folium.Map(location=CENTER_START, zoom_start=ZOOM_START)
-fg = folium.FeatureGroup(name="ImageLayers")
 
+m = folium.Map(location=CENTER_START, zoom_start=ZOOM_START)
 
 # --- Chat Bot Setup ---
 
@@ -105,13 +89,11 @@ with col2:
             opacity=0.7
 
         )
-        st.session_state["layer"] = layer
+        st.session_state["feature_group"].add_child(layer)
 
 with col1:
 
-    if st.session_state["layer"] is not None:
-        fg.add_child(st.session_state["layer"])
 
     # Show the map and capture the interaction state
-    result = st_folium(m, center=st.session_state["center"], zoom=st.session_state["zoom"], key="new", feature_group_to_add=fg, width=1280, height=720)
+    result = st_folium(m, center=st.session_state["center"], zoom=st.session_state["zoom"], key="new", feature_group_to_add=st.session_state["feature_group"], width=1280, height=720, returned_objects=[])
 
