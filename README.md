@@ -6,7 +6,9 @@ https://github.com/jnicolow/nlp_climate_map/commits/)
 
 # Natural language-Based Data Exploration
 
-This repository contains the code for a web app that allows users to interact with [Hawaii Climate Data Portal](https://www.hawaii.edu/climate-data-portal/) data using a map and natural language prompts. With this tool, you can seamlessly zoom in on specific regions or toggle different map layers based on text inputs.
+This repository contains the code for a web app that allows users to interact with [Hawaii Climate Data Portal](https://www.hawaii.edu/climate-data-portal/) data using a map and natural language prompts.
+
+
 
 
 
