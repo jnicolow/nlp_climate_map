@@ -2,6 +2,8 @@
 service_account.json
 service_account_silly.json
 .tif
+.tiff
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
