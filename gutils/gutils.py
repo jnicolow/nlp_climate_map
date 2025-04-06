@@ -6,6 +6,8 @@ from google.genai.types import GenerateContentConfig, Part
 import httpx
 import streamlit as st
 from google.genai import types
+import re
+import json
 
 def _project_id() -> str:
         """Use the Google Auth helper (via the metadata service) to get the Google Cloud Project"""
@@ -112,3 +114,25 @@ def answer_prompty(prompt, client=None):
    )
 
    return response.text
+
+def clean_prompty(text):
+
+    match = re.search(r"\{.*?\}", text, re.DOTALL)  # this gets the portion within curly brackets
+    if match:
+        dict_string = match.group(0) 
+        # print(dict_string)
+        # dict_string = dict_string.replace('"', '').strip()  # Remove double quotes and strip whitespace
+
+        dict_string = dict_string.replace("'", '"')  # replace single quotes with double quotes
+        dict_string = dict_string.replace('None', '"None"')
+        # dict_string = re.sub(r'(\b\w+\b)', r'"\1"', dict_string)  # wrap words with double quotes
+        # print(dict_string)
+        json_data = json.loads(dict_string)
+        if json_data['month'] == "None": json_data['month'] = None
+        if json_data['month'] == 'null': json_data['month'] = None
+        if isinstance(json_data['year'],list): json_data['year'] = json_data['year'][0]
+        return json_data
+        # print(json_data)
+    
+    print("No dictionary found in the input string.")
+    return {'product_type':'rainfall', 'year':'2020'}

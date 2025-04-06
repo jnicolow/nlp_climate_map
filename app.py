@@ -15,58 +15,10 @@ import folium
 from streamlit_folium import st_folium
 from rasterio.warp import transform_bounds
 
+from gutils import gutils
+from hcdp import hcdp
+
 st.set_page_config(layout="wide")
-
-
-def _project_id() -> str:
-    """Use the Google Auth helper (via the metadata service) to get the Google Cloud Project"""
-    try:
-        _, project = google.auth.default()
-    except google.auth.exceptions.DefaultCredentialsError as e:
-        raise Exception("Could not automatically determine credentials") from e
-    if not project:
-        raise Exception("Could not determine project from credentials.")
-    return project
-
-
-def _region() -> str:
-    """Use the local metadata service to get the region"""
-    try:
-        resp = httpx.get(
-            "http://metadata.google.internal/computeMetadata/v1/instance/region",
-            headers={"Metadata-Flavor": "Google"},
-        )
-        return resp.text.split("/")[-1]
-    except Exception:
-        return "us-central1"
-
-
-API_KEY = os.environ.get("GOOGLE_API_KEY")
-PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", _project_id())
-LOCATION = os.environ.get("GOOGLE_CLOUD_REGION", _region())
-MODELS = {
-    "gemini-2.0-flash": "Gemini 2.0 Flash",
-    "gemini-2.0-flash-lite": "Gemini 2.0 Flash-Lite",
-    "gemini-2.5-pro-exp-03-25": "Gemini 2.5 Pro Experimental",
-}
-
-
-@st.cache_resource
-def load_client() -> genai.Client:
-    """Load Google Gen AI Client."""
-    return genai.Client(
-        vertexai=True,
-        project=PROJECT_ID,
-        location=LOCATION,
-        api_key=API_KEY,
-    )
-
-
-def get_model_name(name: str | None) -> str:
-    """Get the formatted model name."""
-    if not name:
-        return "Gemini"
-    return MODELS.get(name, "Gemini")
 
 
 cloud_run_service = os.environ.get("K_SERVICE")
@@ -79,7 +31,8 @@ if cloud_run_service:
 
 # --- Page Setup ---
 st.header("Interactive Map Demo", divider="rainbow")
-client = load_client()
+client = gutils.gcloud_auth() # sets up gcloud client to get llm response
+
 
 # # Initialize chat history
 if "messages" not in st.session_state:
@@ -116,6 +69,17 @@ with col2:
         # Display user message in chat message container
         with st.chat_message("user"):
             st.markdown(prompt)
+
+    response_txt = gutils.answer_prompty(prompt)
+    json_data = gutils.clean_prompty(response_txt)
+    dataset = hcdp.FileDownloadAPI(product_type=json_data['product_type'], year=json_data['year'], month=json_data['month'], aggregation=json_data['aggregation'])
+
+    # prep rasterio for plot
+    raster_data_normalized = dataset.read(1) / raster_data.max()
+    bounds = transform_bounds(dataset.crs, 'EPSG:4326', *dataset.bounds)     # Transform bounds to WGS84 (EPSG:4326)
+
+
+
 
 # --- Map Setup ---
 with col1:
