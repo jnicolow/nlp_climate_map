@@ -54,6 +54,37 @@ with rasterio.open("test.tif") as dataset:
     # Transform bounds to WGS84 (EPSG:4326)
     bounds = transform_bounds(dataset.crs, 'EPSG:4326', *dataset.bounds)
 
+
+# --- Map Setup ---
+with col1:
+    hawaii_center = [21.483, -157.980]  # Latitude, Longitude
+
+# Get saved state or fall back
+    center = st.session_state.get("map_center", hawaii_center)
+    zoom = st.session_state.get("map_zoom", 7)
+
+    m = folium.Map(location=hawaii_center, zoom_start=zoom)
+
+
+# Overlay the raster data
+    folium.raster_layers.ImageOverlay(
+        image=raster_data_normalized,
+        bounds=[[bounds[1], bounds[0]], [bounds[3], bounds[2]]],
+        opacity=0.7
+
+    ).add_to(m)
+# Display the map and capture interaction
+    result = st_folium(m, width=1280, height=720,
+                       returned_objects=["last_center", "zoom"])
+
+# Save the new state to prevent reset
+    if result:
+        st.session_state["map_center"] = result.get(
+            "last_center", hawaii_center)
+        st.session_state["map_zoom"] = result.get("zoom", zoom)
+
+
+
 # --- Chat Bot Setup ---
 with col2:
 
